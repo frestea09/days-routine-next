@@ -1,0 +1,244 @@
+# Props
+import { PenerimaProps } from "./PenerimaProps";
+
+export const BelajarProps = () => {
+  const data = {
+    bilanganPertama: 2,
+    bilanganKedua: 2,
+  };
+  return (
+    <>
+      <h3>Belajar Props</h3>
+      <PenerimaProps data={data} />
+    </>
+  );
+};
+
+export const PenerimaProps = ({
+  data,
+}: {
+  data: { bilanganPertama: number; bilanganKedua: number };
+}) => {
+  return (
+    <>
+      <p>Bilangan Pertama : {data.bilanganPertama}</p>
+      <p>Bilangan Kedua : {data.bilanganKedua}</p>
+    </>
+  );
+};
+# state 
+"use client";
+import { useState } from "react";
+
+const Page = () => {
+  const [data, setData] = useState({
+    bilanganPertama: 0,
+    bilanganKedua: 0,
+  });
+  const updateData = (inputBilanganPertama: number) => {
+    setData((prevState) => {
+      return {
+        ...prevState,
+        bilanganPertama: inputBilanganPertama,
+      };
+    });
+  };
+  return (
+    <>
+      <p>Number : {data.bilanganPertama}</p>
+      <input
+        className="p-4 m-8"
+        onChange={(e) => {
+          updateData(e.target.value);
+        }}
+      />
+    </>
+  );
+};
+
+export default Page;
+
+# funciton as props & state object handle 
+
+"use client";
+import { useState } from "react";
+import { PenerimaProps } from "./PenerimaProps";
+
+const Pages = () => {
+  type dataProps = {
+    name: string;
+    age: number;
+  };
+  const [data, setData] = useState<dataProps>({ name: "ganteng", age: 12 });
+  const handleAge = (insertAge: number) => {
+    setData((prevState) => {
+      return {
+        ...prevState,
+        age: insertAge,
+      };
+    });
+  };
+  return (
+    <>
+      <h1>Belajar Method Props</h1>
+      <PenerimaProps data={data} handleAge={handleAge} />
+    </>
+  );
+};
+
+export default Pages;
+
+# handle condition 
+"use client";
+import { useState } from "react";
+
+const Page = () => {
+  type data = {
+    name: string;
+    isLogin: boolean;
+  };
+  const [data, setData] = useState<data>({ name: "ilman", isLogin: false });
+  const handleLogin = () => {
+    setData((prevState) => ({
+      ...prevState,
+      isLogin: !prevState.isLogin,
+    }));
+  };
+  const handleName = (insertName: string) => {
+    setData((prevState) => ({
+      ...prevState,
+      name: insertName,
+    }));
+  };
+  const status = data.isLogin ? "login" : "not login";
+  return (
+    <>
+      <h3>Belajar Condition</h3>
+      <p>User : {data.name}</p>
+      <p>Status : {status}</p>
+      <input
+        name="inputName"
+        onChange={(event) => {
+          handleName(event.target.value);
+        }}
+      />
+      <button onClick={handleLogin}>Login</button>
+    </>
+  );
+};
+
+export default Page;
+
+# optimal 
+"use client";
+import { useCallback, useMemo, useState } from "react";
+
+const page = () => {
+  const [isLogin, setIsLogin] = useState(false);
+  const getAddition = useMemo(() => {
+    return isLogin ? "login" : "false";
+  }, [isLogin]);
+  const handleHello = useCallback(() => {
+    alert("hello");
+  }, []);
+  const handleLogin = useCallback(() => {
+    setIsLogin((prevState) => !prevState);
+  }, []);
+  return (
+    <>
+      <h3>Hello</h3>
+      <p>{getAddition}</p>
+      <button onClick={handleHello}>Say Hello</button>
+      <button onClick={handleLogin}>login</button>
+    </>
+  );
+};
+
+export default page;
+
+# belajar api 
+1. buat instance
+import axios from "axios";
+
+export const axiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+2. buat fetcher
+import { axiosInstance } from "./axiosInstance";
+
+export const fetcher = async (url: string) =>
+  await axiosInstance.get(url).then((res) => res.data);
+
+3. buat fetcher
+"use client";
+import useSWR from "swr";
+import { fetcher } from "./fetcher";
+
+export const useFetch = (url: string) => {
+  const { data, error, isLoading, mutate } = useSWR(url, fetcher);
+  return { data, error, isLoading, mutate };
+};
+
+4. buat CRUD
+import { axiosInstance } from "./axiosInstance";
+
+export const createData = async (url: string, data: any) => {
+  const response = await axiosInstance.post(url, data);
+  console.log(response);
+  return response.data;
+};
+"use client";
+import { useState } from "react";
+import { useFetch } from "./useFetch";
+import { mutate } from "swr";
+import { createData } from "./api";
+
+const Page = () => {
+  type propsDataInput = {
+    title: string;
+    body: string;
+  };
+  const [dataInput, setDataInput] = useState<propsDataInput>({});
+  const { data, mutate } = useFetch("/users");
+  const handleInput = (inputTitle: string) => {
+    setDataInput((prevState) => ({ ...prevState, title: inputTitle }));
+  };
+  const handleInputBody = (inputTitle: string) => {
+    setDataInput((prevState) => ({ ...prevState, body: inputTitle }));
+  };
+  const handlePost = async () => {
+    try {
+      await createData("/posts", dataInput);
+      mutate();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  return (
+    <>
+      <h3>Selamat Data di Belajar Api</h3>
+      <p>Title : {dataInput.title}</p>
+      <p>Body : {dataInput.body}</p>
+      <div className="flex flex-col w-[50%] px-5 gap-2">
+        <input
+          name="title"
+          className="border-2"
+          onChange={(event) => handleInput(event.target.value)}
+        />
+        <input
+          name="body"
+          className="border-2"
+          onChange={(event) => handleInputBody(event.target.value)}
+        />
+        <button onClick={handlePost}>Save</button>
+      </div>
+    </>
+  );
+};
+
+export default Page;
+
